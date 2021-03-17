@@ -61,7 +61,13 @@ module.exports = {
           entitlementsInherit: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
           category: "public.app-category.developer-tools",
-          "hardenedRuntime": true
+          "hardenedRuntime": true,
+          target: [
+            {
+              target: 'mas',
+              arch: 'arm64'
+            }
+          ]
         },
         linux: {
           icon: './public/icons/png/',
