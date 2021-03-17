@@ -1,3 +1,16 @@
+# Forked for M1 ARM64 of recent master 1.9.5
+You can build your self.
+
+`git clone git@github.com:joshuapack/beekeeper-studio.git beekeeper-studio`
+
+`cd beekeeper-studio/`
+
+`yarn install`
+
+`yarn run electron:build`
+
+Or you can download the M1 App [here](https://www.joshuapack.com/files/BeekeeperStudioV1.9.5.zip)
+
 # Beekeeper Studio
 
 Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows.
