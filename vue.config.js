@@ -64,6 +64,14 @@ module.exports = {
           "hardenedRuntime": true,
           target: [
             {
+              target: 'zip',
+              arch: 'x64'
+            },
+            {
+              target: 'dmg',
+              arch: 'x64'
+            },
+            {
               target: 'mas',
               arch: 'arm64'
             }
