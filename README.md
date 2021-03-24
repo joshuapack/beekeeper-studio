@@ -1,4 +1,4 @@
-# Forked for M1 ARM64 of recent master 1.10.1
+# Forked for M1 ARM64 of recent master 1.10.2
 You can build your self.
 
 `git clone git@github.com:joshuapack/beekeeper-studio.git beekeeper-studio`
@@ -9,7 +9,7 @@ You can build your self.
 
 `yarn run electron:build`
 
-Or you can download the M1 App [here](https://www.joshuapack.com/files/BeekeeperStudioV1.10.1.zip)
+Or you can download the M1 App [here](https://www.joshuapack.com/files/BeekeeperStudioV1.10.2.zip)
 
 # Beekeeper Studio
 
