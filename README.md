@@ -1,7 +1,7 @@
 # Forked for M1 ARM64 of recent master 1.10.2
 You can build your self.
 
-```
+```bash
 # First: Install NodeJS 12+, NPM, and Yarn
 
 # Clone and build!
