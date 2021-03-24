@@ -2,6 +2,9 @@
 You can build your self.
 
 ```
+# First: Install NodeJS 12+, NPM, and Yarn
+
+# Clone and build!
 git clone git@github.com:joshuapack/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
 yarn install && yarn run electron:build
