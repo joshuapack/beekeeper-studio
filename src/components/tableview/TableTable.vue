@@ -136,6 +136,7 @@ import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
+import globals from '@/common/globals';
 
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
@@ -304,10 +305,12 @@ export default Vue.extend({
       this.table.columns.forEach(column => {
 
         const keyData = this.tableKeys[column.columnName]
+
         // this needs fixing
         // currently it doesn't fetch the right result if you update the PK
         // because it uses the PK to fetch the result.
         const slimDataType = this.slimDataType(column.dataType)
+        const width = this.defaultColumnWidth(slimDataType, columnWidth)
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
         const isPK = this.primaryKey && this.primaryKey === column.columnName
@@ -333,7 +336,8 @@ export default Vue.extend({
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
-          width: columnWidth,
+          width,
+          maxWidth: globals.maxColumnWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
           headerSort: this.allowHeaderSort(column),
@@ -483,10 +487,10 @@ export default Vue.extend({
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
+      ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
       pagination: "remote",
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
-      columnMaxWidth: 500,
       initialSort: this.initialSort,
       initialFilter: [this.initialFilter || {}],
       lastUpdated: null,
@@ -506,6 +510,11 @@ export default Vue.extend({
 
   },
   methods: {
+    defaultColumnWidth(slimType, defaultValue) {
+      const chunkyTypes = ['json', 'jsonb', 'text']
+      if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
+      return defaultValue
+    },
     valueCellFor(cell) {
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
@@ -519,8 +528,7 @@ export default Vue.extend({
     slimDataType(dt) {
       if (!dt) return null
       if(dt === 'bit(1)') return dt
-
-return dt.split("(")[0]
+      return dt.split("(")[0]
     },
     editorType(dt) {
       switch (dt) {
@@ -838,8 +846,11 @@ return dt.split("(")[0]
               data
             });
           } catch (error) {
-            reject();
-            this.setQueryError('Error loading data', error.message)
+            reject(error.message);
+            this.queryError = {
+              title: error.message,
+              message: error.message
+            }
             this.$nextTick(() => {
               this.tabulator.clearData()
             })
