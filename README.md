@@ -11,6 +11,11 @@ yarn install && yarn run electron:build
 ```
 
 Or you can download the M1 App [here](https://www.joshuapack.com/files/BeekeeperStudioV1.10.2.zip)
+I also have a edge build of the current master on the project: [Download here](https://www.joshuapack.com/files/BeekeeperStudioV1.10.2-edge.zip)
+
+This could be the last build, since, they will be upgrading to Electron 12 which supports ARM64 on Mac with M1!
+
+Thank you all for the good time :D
 
 # Beekeeper Studio
 
