@@ -54,9 +54,9 @@
 
   import { mapGetters, mapState } from 'vuex'
   import _ from 'lodash'
-  import rawLog from 'electron-log'
+  // import rawLog from 'electron-log'
 
-  const log = rawLog.scope('TableListItem')
+  // const log = rawLog.scope('TableListItem')
 	export default {
 		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container"],
     mounted() {
