@@ -1,5 +1,5 @@
 <template>
-  <div class="tabletable flex-col">
+  <div class="tabletable flex-col" :class="{'view-only': !editable}">
     <div class="table-filter">
       <form @submit.prevent="triggerFilter">
         <div v-if="filterMode === 'raw'" class="filter-group row gutter">
@@ -87,7 +87,7 @@
       <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
 
         <!-- Info -->
-        <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`~${totalRecordsText} Records`">
+        <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`Approximately ${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
@@ -116,7 +116,8 @@
             >warning</i>
           </span>
         </div> -->
-        
+      
+
         <!-- Actions -->
         <x-button class="actions-btn btn btn-flat" title="actions">
           <i class="material-icons">settings</i>
@@ -128,9 +129,17 @@
             <x-menuitem @click="refreshTable">
               <x-label>Refresh</x-label>
             </x-menuitem>
+            <hr>
+            <x-menuitem @click="exportTable">
+              <x-label>Export Whole Table</x-label>
+            </x-menuitem>
+
+            <x-menuitem @click="exportFiltered">
+              <x-label>Export Filtered View</x-label>
+            </x-menuitem>
           </x-menu>
         </x-button>
-        
+
         <!-- Pending Changes -->
         <x-buttons v-if="pendingChangesCount > 0" class="pending-changes">
           <x-button class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
@@ -145,7 +154,7 @@
               <x-label>Commit</x-label>
             </x-menuitem>
             <x-menuitem @click.prevent="discardChanges">
-              <x-label>Discard</x-label>
+              <x-label>Discard Changes</x-label>
             </x-menuitem>
           </x-menu>
           </x-button>
@@ -178,6 +187,7 @@ import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
+import {AppEvent} from '../../common/AppEvent';
 
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
@@ -290,7 +300,7 @@ export default Vue.extend({
       return `Enter condition, eg: name like 'Matthew%'`
     },
     totalRecordsText() {
-      return `${this.totalRecords.toLocaleString()}`
+      return `~${this.totalRecords.toLocaleString()}`
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length 
@@ -366,7 +376,7 @@ export default Vue.extend({
           title: column.columnName,
           field: column.columnName,
           titleFormatter: formatter,
-          mutatorData: this.resolveDataMutator(column.dataType),
+          mutatorData: this.resolveTabulatorMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
           width,
@@ -438,7 +448,8 @@ export default Vue.extend({
       }
 
       return [{ column: this.table.columns[0].columnName, dir: "asc" }];
-    }
+    },
+
   },
 
   watch: {
@@ -543,6 +554,28 @@ export default Vue.extend({
 
   },
   methods: {
+    buildPendingInserts() {
+      const inserts = this.pendingChanges.inserts.map((item) => {
+        const columnNames = this.table.columns.map((c) => c.columnName)
+        const rowData = item.row.getData()
+        console.log("ROW DATA", item.row.getData())
+        const result = {}
+        columnNames.forEach((c) => {
+          const d = rowData[c]
+          if (c === this.primaryKey && !d) {
+            // do nothing
+          } else {
+            result[c] = d
+          }
+        })
+        return {
+          table: this.table.name,
+          schema: this.table.schema,
+          data: result
+        }
+      })
+      return inserts
+    },
     defaultColumnWidth(slimType, defaultValue) {
       const chunkyTypes = ['json', 'jsonb', 'text']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
@@ -661,8 +694,10 @@ export default Vue.extend({
         cell: cell,
         value: cell.getValue(0)
       }
-
-      this.addPendingChange(CHANGE_TYPE_UPDATE, payload)
+      // remove existing pending updates with identical pKey-column combo
+      let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
+      pendingUpdates.push(payload)
+      this.$set(this.pendingChanges, 'updates', pendingUpdates)
     },
     cellCloneRow(e, cell) {
       const row = cell.getRow()
@@ -677,6 +712,9 @@ export default Vue.extend({
       this.tabulator.addRow({}, true).then(row => { 
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
+        this.$nextTick(() => {
+          row.getCells()[0].edit();
+        })
       })
     },
     addRowToPendingInserts(row) {
@@ -689,7 +727,7 @@ export default Vue.extend({
         pkColumn: this.primaryKey
       }
 
-      this.addPendingChange(CHANGE_TYPE_INSERT, payload)
+      this.pendingChanges.inserts.push(payload)
     },
     addRowToPendingDeletes(row) {
       const pkCell = row.getCells().find(c => c.getField() === this.primaryKey)
@@ -715,20 +753,6 @@ export default Vue.extend({
         primaryKey: pkCell.getValue()
       }
 
-      this.addPendingChange(CHANGE_TYPE_DELETE, payload)
-    },
-    addPendingChange(changeType, payload) {
-      if (changeType === CHANGE_TYPE_INSERT) {
-        this.pendingChanges.inserts.push(payload)
-      }
-
-      if (changeType === CHANGE_TYPE_UPDATE) {
-        // remove existing pending updates with identical pKey-column combo
-        let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
-        pendingUpdates.push(payload)
-
-        this.$set(this.pendingChanges, 'updates', pendingUpdates)
-      } else if (changeType === CHANGE_TYPE_DELETE) {
         // remove pending updates for the row marked for deletion
         const filter = { 'primaryKey': payload.primaryKey }
         const discardedUpdates = _.filter(this.pendingChanges.updates, filter)
@@ -741,7 +765,6 @@ export default Vue.extend({
         if (!_.find(this.pendingChanges.deletes, { 'primaryKey': payload.primaryKey })) {
           this.pendingChanges.deletes.push(payload)
         }
-      }
     },
     resetPendingChanges() {
       this.pendingChanges = {
@@ -757,18 +780,13 @@ export default Vue.extend({
 
         try {
 
-          const inserts = this.pendingChanges.inserts.map((item) => {
-            return {
-              table: item.table,
-              data: _.omitBy(item.row.getData(), (v, k) => (k === item.pkColumn && !v))
-            }
-          })
-
           const payload = {
-            inserts: inserts,
+            inserts: this.buildPendingInserts(),
             updates: this.pendingChanges.updates,
             deletes: this.pendingChanges.deletes
           }
+
+          console.log("applying changes", payload)
 
           const result = await this.connection.applyChanges(payload)
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
@@ -951,6 +969,12 @@ export default Vue.extend({
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
+    exportTable() {
+      this.trigger(AppEvent.beginExport, { table: this.table })
+    },
+    exportFiltered() {
+      this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filterForTabulator} )
+    }
   }
 });
 </script>

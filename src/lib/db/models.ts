@@ -1,4 +1,25 @@
 
+
+
+export abstract class BeeCursor {
+  constructor(public chunkSize: number) {
+
+  }
+  abstract start(): Promise<void>
+  abstract read(): Promise<any[][]>
+  abstract cancel(): Promise<void>
+  async close() {
+    await this.cancel()
+  }
+}
+
+export interface StreamResults {
+  columns: TableColumn[],
+  totalRows: number,
+  cursor: BeeCursor
+}
+
+
 export interface TableOrView {
   schema: string;
   name: string;
@@ -67,8 +88,8 @@ export interface TableChanges {
 
 export interface TableInsert {
   table: string;
-  row: any[];
-  data: any[];
+  schema?: string
+  data: object[];
 }
 
 export interface TableUpdate {

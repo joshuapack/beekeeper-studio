@@ -5,8 +5,10 @@ import knexlib from 'knex';
 import _ from 'lodash';
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
+import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
+import { MysqlCursor } from './mysql/MySqlCursor';
 import { buildDeleteQueries, buildInsertQueries, buildSelectTopQuery } from './utils';
 
 const log = rawLog.scope('mysql')
@@ -50,6 +52,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -176,27 +179,53 @@ export async function listTableColumns(conn, database, table) {
   }));
 }
 
+async function getTableLength(conn, table, filters) {
+  const tableCheck = 'SELECT TABLE_TYPE as tt FROM INFORMATION_SCHEMA.TABLES where table_schema = database() and TABLE_NAME = ?'
+  const tcResult = await driverExecuteQuery(conn, { query: tableCheck, params: [table] })
+  const isTable = tcResult.data[0] && tcResult.data[0]['tt'] === 'BASE TABLE'
+
+  const queries = buildSelectTopQuery(table, 1, 1, [], filters)
+  let title = 'total'
+  if (!filters && isTable) {
+    queries.countQuery = `show table status like '${table}'`
+    title = 'Rows'
+  }
+  const { countQuery, params } = queries
+  const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
+  const rowWithTotal = countResults.data.find((row) => { return row[title] })
+  const totalRecords = rowWithTotal ? rowWithTotal[title] : 0
+  return Number(totalRecords)
+}
+
+
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
-  let title = 'total'
-  if(!filters) {
-    // Note: We don't use wrapIdentifier here because it's a string, not an identifier.
-    queries.countQuery = `show table status like '${table}'`;
-    title = 'Rows'
-  }
 
-  const { query, countQuery, params } = queries
-  const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
+  const { query, params } = queries
+
   const result = await driverExecuteQuery(conn, { query, params })
-  const rowWithTotal = countResults.data.find((row) => { return row[title] })
-  const totalRecords = rowWithTotal ? rowWithTotal[title] : 0
+  const totalRecords = await getTableLength(conn, table, filters)
   return {
     result: result.data,
     totalRecords: Number(totalRecords),
     fields: Object.keys(result.data[0] || {})
   }  
 
+}
+
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize) {
+  const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
+  const columns = await listTableColumns(conn, db, table)
+  const rowCount = await getTableLength(conn, table, filters)
+
+  const { query, params } = qs
+
+  return {
+    totalRows: rowCount,
+    columns,
+    cursor: new MysqlCursor(conn, query, params, chunkSize)
+  }
 }
 
 export async function listTableTriggers(conn, table) {
@@ -452,7 +481,7 @@ export async function executeQuery(conn, queryText, rowsAsArray = false) {
     return [parseRowQueryResult(data, fields, commands[0], rowsAsArray)];
   }
 
-  return data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx]));
+  return data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx], rowsAsArray));
 }
 
 
@@ -633,7 +662,7 @@ function identifyCommands(queryText) {
 }
 
 function driverExecuteQuery(conn, queryArgs) {
-  logger().debug(`Running Query ${queryArgs.query}`)
+  logger().info(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query({ sql: queryArgs.query, values: queryArgs.params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});

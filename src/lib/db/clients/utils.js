@@ -103,8 +103,8 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   let sql = `
     SELECT * ${baseSQL}
     ${orderByString}
-    LIMIT ${limit}
-    OFFSET ${offset}
+    ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
+    ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
     `
     return {query: sql, countQuery: countSQL, params: filterParams}
 }
@@ -130,6 +130,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
 export function buildInsertQueries(knex, inserts) {
   return inserts.map(insert => {
     const query = knex(insert.table)
+      .withSchema(insert.schema)
       .insert(insert.data)
       .toQuery()
     return query

@@ -61,8 +61,8 @@ i {
 // Scrollbar
 // ---------------------
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track-piece {
   background-color: transparent;
@@ -217,7 +217,7 @@ i {
   }
   &.btn-primary {
     &:hover, &:focus {
-      background: $brand-secondary!important;
+      background: $brand-primary!important;
     }
   }
   &.btn-flat {
@@ -471,6 +471,12 @@ input[type=file] {
 .text-warning {
   color: $brand-warning!important;
 }
+.text-light {
+  color: $text-light;
+}
+.text-lighter {
+  color: $text-lighter;
+}
 
 .text-2x {
   font-size: 2rem;
@@ -627,7 +633,7 @@ input[type=file] {
 .badge {
   display: inline-block;
   padding: 0 0.35rem;
-  border-radius: 4px;
+  border-radius: 1rem;
   font-size: 90%;
   font-weight: normal;
   line-height: 1.4;
@@ -641,6 +647,10 @@ input[type=file] {
               background-color 0.15s ease-in-out,
               border-color 0.15s ease-in-out,
               box-shadow 0.15s ease-in-out;
+  &.badge-info {
+    background: $brand-info;
+    color: rgba(black, 0.87);
+  }
 }
 
 // Alerts
