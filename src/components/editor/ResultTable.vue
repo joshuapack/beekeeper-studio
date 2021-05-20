@@ -55,7 +55,7 @@ import globals from '@/common/globals'
           return this.result.truncated
       },
       tableColumns() {
-        const columnWidth = this.result.fields.length > 20 ? 125 : undefined
+        const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
         return this.result.fields.map((column) => {
           const result = {
             title: column.name,
@@ -63,8 +63,10 @@ import globals from '@/common/globals'
             titleDownload: column.name,
             dataType: column.dataType,
             width: columnWidth,
-            mutatorData: this.resolveDataMutator(column.dataType),
-            formatter: this.cellFormatter
+            maxInitialWidth: globals.maxInitialWidth,
+            mutator: this.resolveTabulatorMutator(column.dataType),
+            formatter: this.cellFormatter,
+            tooltip: true,
           }
           return result;
         })
