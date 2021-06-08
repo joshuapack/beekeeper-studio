@@ -1,4 +1,4 @@
-# Forked for M1 ARM64 of recent master 1.11.5
+# Forked for M1 ARM64 of recent master 1.12.0
 You can build your self.
 
 ```bash
@@ -10,7 +10,7 @@ cd beekeeper-studio/
 yarn install && yarn run electron:build
 ```
 
-Or you can download the M1 App [here](https://www.joshuapack.com/files/BeekeeperStudioV1.11.5.zip)
+Or you can download the M1 App [here](https://www.joshuapack.com/files/BeekeeperStudioV1.12.0.zip)
 
 This could be the last build, since, they will be upgrading to Electron 12 which supports ARM64 on Mac with M1!
 
