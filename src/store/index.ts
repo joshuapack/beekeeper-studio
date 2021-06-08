@@ -12,7 +12,7 @@ import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection } from '../lib/db/client'
-import { Routine, TableColumn, TableOrView } from "../lib/db/models"
+import { ExtendedTableColumn, Routine, TableColumn, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
@@ -39,7 +39,8 @@ interface State {
   favorites: UsedQuery[],
   username: Nullable<string>,
   menuActive: boolean,
-  activeTab: Nullable<CoreTab>
+  activeTab: Nullable<CoreTab>,
+  selectedSidebarItem: Nullable<string>,
 }
 
 Vue.use(Vuex)
@@ -71,9 +72,13 @@ const store = new Vuex.Store<State>({
     favorites: [],
     username: null,
     menuActive: false,
-    activeTab: null
+    activeTab: null,
+    selectedSidebarItem: null
   },
   getters: {
+    selectedSidebarItem(state) {
+      return state.selectedSidebarItem
+    },
     orderedUsedConfigs(state) {
       return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
     },
@@ -119,6 +124,9 @@ const store = new Vuex.Store<State>({
     }
   },
   mutations: {
+    selectSidebarItem(state, item: string) {
+      state.selectedSidebarItem = item
+    },
     entityFilter(state, filter) {
       state.entityFilter = filter
     },
@@ -273,6 +281,16 @@ const store = new Vuex.Store<State>({
       context.commit('setUsername', name)
     },
 
+    async openUrl(context, url: string) {
+      console.log("open url", url)
+      const conn = new SavedConnection();
+      if (!conn.parse(url)) {
+        throw `Unable to parse ${url}`
+      } else {
+        await context.dispatch('connect', conn)
+      }
+    },
+
     async connect(context, config: SavedConnection) {
       if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)
@@ -369,8 +387,9 @@ const store = new Vuex.Store<State>({
             viewColumns = viewColumns.concat(columns)
           }
 
-          const allColumns = tableColumns.concat(viewColumns)
-
+          type MaybeColumn = ExtendedTableColumn | TableColumn
+          const allColumns: MaybeColumn[]  = [...tableColumns, ...viewColumns]
+          log.info("ALL COLUMNS", allColumns)
           tables.forEach((table) => {
             table.columns = allColumns.filter(row => {
               return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)

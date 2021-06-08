@@ -133,18 +133,23 @@ export class DBTestUtil {
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(["pears"])
 
+
+
+  }
+
+  async filterTests() {
     // filter test - builder
-    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{field: 'bananas', type: '=', value: "pears"}], this.defaultSchema)
-    result = r.result.map((r: any) => r.bananas)
+    let r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: '=', value: "pears" }], this.defaultSchema)
+    let result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
 
     // filter test - raw
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], "bananas = 'pears'", this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
+  }
 
-
-    console.log("pk tests")
+  async primaryKeyTests() {
     // primary key tests
     let pk = await this.connection.getPrimaryKey("people", this.defaultSchema)
     expect(pk).toBe("id")
@@ -179,6 +184,11 @@ export class DBTestUtil {
     expect(r2[0].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', 'a']])
     expect(r2[1].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', 'b']])
 
+  }
+
+  // lets start simple, it should resolve for all connection types
+  async tablePropertiesTests() {
+    await this.connection.getTableProperties('group')
   }
 
   async streamTests() {
