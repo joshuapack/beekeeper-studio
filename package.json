@@ -21,7 +21,7 @@
     "postuninstall": "electron-builder install-app-deps",
     "release:prs": "./build/get-prs.sh"
   },
-  "main": "background.js",
+  "main": "./dist_electron/bundled/background.js",
   "dependencies": {
     "base64-url": "^2.3.3",
     "better-sqlite3": "^7.4.1",

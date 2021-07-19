@@ -7,10 +7,15 @@ You can build your self.
 # Clone and build!
 git clone git@github.com:joshuapack/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
-yarn install && yarn run electron:build
+sh ./build/arm-build.sh
+
+# Get Binary in ./dist/mac-arm64 folder
+
+# You could also serve it to test the build locally
+yarn install && yarn run electron:serve
 ```
 
-Or you can download the M1 App [here](https://www.joshuapack.com/files/BeekeeperStudioV1.12.0.zip)
+Due to not signing it, you will need to build on your mac yourself. I have made it so much easier this time around.
 
 This could be the last build, since, they will be upgrading to Electron 12 which supports ARM64 on Mac with M1!
 
