@@ -22,13 +22,13 @@
     "postuninstall": "electron-builder install-app-deps",
     "release:prs": "./build/get-prs.sh"
   },
-  "main": "background.js",
+  "main": "./dist_electron/bundled/background.js",
   "dependencies": {
     "base64-url": "^2.3.3",
     "better-sqlite3": "^7.4.1",
     "bytes": "^3.1.0",
     "cassandra-driver": "^4.4.0",
-    "cli-highlight": "2.0.0",
+    "cli-highlight": "2.1.11",
     "codemirror": "^5.58.2",
     "connection-string": "^3.4.2",
     "core-js": "3",

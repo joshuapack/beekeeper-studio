@@ -1,4 +1,4 @@
-# Forked for M1 ARM64 of recent master 1.12.0
+# Forked for M1 ARM64 of recent master 1.13.2
 You can build your self.
 
 ```bash
@@ -7,9 +7,10 @@ You can build your self.
 # Clone and build!
 git clone git@github.com:joshuapack/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
-sh ./build/arm-build.sh
+sh ./apps/studio/build/arm-build.sh
 
-# Get Binary in ./dist/mac-arm64 folder
+# Get Binary in ./apps/studio/dist/mac-arm64 folder named Beekeeper Studio.app
+# You can drag it into your application folder
 
 # You could also serve it to test the build locally
 yarn install && yarn run electron:serve
