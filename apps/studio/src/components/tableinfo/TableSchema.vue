@@ -11,11 +11,17 @@
           <span class="expand"></span>
           <div class="actions">
             <a @click.prevent="refreshColumns" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-            <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+            <a v-if="editable" @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div ref="tableSchema"></div>
 
+      </div>
+      <div class="notices" v-if="notice">
+        <div class="alert alert-info">
+          <i class="material-icons-outlined">info</i> 
+          {{notice}}
+        </div>
       </div>
     </div>
 
@@ -48,11 +54,11 @@
 <script lang="ts">
 import Tabulator, { CellComponent, RowComponent } from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
-import sqlFormatter from 'sql-formatter'
+import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 // import globals from '../../common/globals'
-import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
+import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -60,8 +66,17 @@ import { mapGetters } from 'vuex'
 import { getDialectData } from '@shared/lib/dialects'
 import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
-import { AlterTableSpec } from '@shared/lib/dialects/models'
+import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+
+
+const FakeCell = {
+  getRow: () => ({}),
+  getField: () => 'fake',
+  getValue: () => 'fake'
+
+}
+
 export default Vue.extend({
   components: {
     StatusBar,
@@ -84,47 +99,19 @@ export default Vue.extend({
     hasEdits() {
       this.tabState.dirty = this.hasEdits
     },
-    active() {
-      if (!this.tabulator) return;
-      if (this.active) {
-        this.tabulator.restoreRedraw()
-        this.$nextTick(() => {
-          this.tabulator.redraw(this.forceRedraw)
-          this.forceRedraw = false
-        })
-      } else {
-        this.tabulator.blockRedraw()
-      }
-    },
-    editedCells(newCells: CellComponent[], oldCells: CellComponent[]) {
-      const removed = oldCells.filter((c) => !newCells.includes(c))
-      newCells.forEach((c) => c.getElement().classList.add('edited'))
-      removed.forEach((c) => c.getElement().classList.remove('edited'))
-    },
-    newRows(nuRows: RowComponent[], oldRows: RowComponent[]) {
-      const removed = oldRows.filter((r) => !nuRows.includes(r))
-      nuRows.forEach((r) => {
-        r.getElement().classList?.add('inserted')
-      })
-      removed.forEach((r) => {
-        r.getElement().classList?.remove('inserted')
-      })
-    },
-    removedRows(newRemoved: RowComponent[], oldRemoved: RowComponent[]) {
-      const removed = oldRemoved.filter((r) => !newRemoved.includes(r))
-      newRemoved.forEach((r) => r.getElement().classList?.add('deleted'))
-      removed.forEach((r) => r.getElement().classList?.remove('deleted'))
-    },
-    tableData: {
-      deep: true,
-      handler() {
-        if (!this.tabulator) return
-        this.tabulator.replaceData(this.tableData)
-      }
-    }
+    ...TabulatorStateWatchers
   },
   computed: {
     ...mapGetters(['dialect']),
+    editable() {
+      return this.table.entityType === 'table' && !!this.primaryKeys.length
+    },
+    notice() {
+      if (this.dialect === 'sqlite') {
+        return 'Note: SQLite does not support any column alterations except renaming.'
+      }
+      return null
+    },
     disabledFeatures() {
       return getDialectData(this.dialect).disabledFeatures
     },
@@ -188,6 +175,16 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
         },
+        (this.disabledFeatures?.informationSchema?.extra ? null : {
+          title: "Extra",
+          field: 'extra',
+          tooltip: true,
+          headerTooltip: 'eg AUTO_INCREMENT',
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          formatter: this.cellFormatter,
+          cellEdited: this.cellEdited,
+          editor: vueEditor(NullableInputEditorVue)
+        }),
         {
           title: 'Primary',
           field: 'primary',
@@ -200,19 +197,10 @@ export default Vue.extend({
           width: 70,
           cssClass: "read-only never-editable",
         },
-        {
-          field: 'trash-button',
-          formatter: (_cell) => `<div class="dynamic-action" />`,
-          width: 36,
-          minWidth: 36,
-          hozAlign: 'center',
-          cellClick: this.removeRow,
-          resizable: false,
-          cssClass: "remove-btn read-only",
-        }
-      ]
+        this.editable ? trashButton(this.removeRow) : null
+      ].filter((c) => !!c)
       return result.map((col) => {
-        const editable = _.isFunction(col.editable) ? col.editable({ getRow: () => ({})}) : col.editable
+        const editable = _.isFunction(col.editable) ? col.editable(FakeCell) : col.editable
         const cssBase = col.cssClass || null
         const extraCss = editable ? 'editable' : 'read-only'
         const cssClass = cssBase ? `${cssBase} ${extraCss}` : extraCss
@@ -233,13 +221,14 @@ export default Vue.extend({
   methods: {
     isCellEditable(feature: string, cell: CellComponent): boolean {
       // views and materialized views are not editable
-      if (this.table.entityType !== 'table') return false
+
+      if (!this.editable) return false
       if (this.removedRows.includes(cell.getRow())) return false
 
       const isDisabled = this.disabledFeatures?.alter?.[feature]
       const isNewRow = this.newRows.includes(cell.getRow())
-
-      return (isNewRow || !isDisabled)
+      const result = (isNewRow || !isDisabled)
+      return result
     },
     async refreshColumns() {
       if(this.hasEdits) {
@@ -302,7 +291,7 @@ export default Vue.extend({
         this.error = null
         const changes = this.collectChanges()
         const sql = await this.connection.alterTableSql(changes)
-        const formatted = sqlFormatter.format(sql)
+        const formatted = format(sql, { language: FormatterDialect(this.dialect)})
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch (ex) {
         this.error = ex
@@ -329,12 +318,10 @@ export default Vue.extend({
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`
       const row: RowComponent = await this.tabulator.addRow({columnName: name, dataType: 'varchar(255)', nullable: true})
-      const cell = row.getCell('columnName')
       this.newRows.push(row)
-      if (cell) {
-        // don't know why I need this, but I do
-        setTimeout(() => cell.edit(), 50)
-      }
+      // TODO (fix): calling edit() on the column name cell isn't working here.
+      // ideally we could drop users into the first cell to make editing easier
+      // but right now if it fails it breaks the whole table.
     },
     removeRow(_e, cell: CellComponent): void {
       const row = cell.getRow()
@@ -386,6 +373,7 @@ export default Vue.extend({
     }
   },
   mounted() {
+    this.tabState.dirty = false
     // const columnWidth = this.table.columns.length > 20 ? 125 : undefined
     if (!this.active) this.forceRedraw = true
     this.initializeTabulator()

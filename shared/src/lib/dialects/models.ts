@@ -36,6 +36,13 @@ export function KnexDialect(d: Dialect): KnexDialect {
   return d as KnexDialect
 }
 
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift'
+export function FormatterDialect(d: Dialect): FormatterDialect {
+  if (!d) return 'sql'
+  if (d === 'sqlserver') return 'tsql'
+  if (d === 'sqlite') return 'sql'
+  return d
+}
 
 
 export class ColumnType {
@@ -57,21 +64,43 @@ export class ColumnType {
 }
 
 export interface DialectData {
-  columnTypes: ColumnType[]
+  columnTypes: ColumnType[],
+  constraintActions: string[]
   wrapIdentifier: (s: string) => string
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
   disabledFeatures?: {
+    informationSchema?: {
+      extra?: boolean
+    }
     alter?: {
       addColumn?: boolean
       dropColumn?: boolean
       renameColumn?: boolean
       alterColumn?: boolean
       multiStatement?: boolean
+      addConstraint?: boolean
+      dropConstraint?: boolean
     },
+    constraints?: {
+      onUpdate?: boolean,
+      onDelete?: boolean
+    }
+    index?: {
+      desc?: boolean
+    }
+    createIndex?: boolean
     comments?: boolean
   }
 }
+
+export const defaultConstraintActions = [
+  'NO ACTION',
+  'SET NULL',
+  'SET DEFAULT',
+  'CASCADE'
+]
+
 
 export function defaultEscapeString(value: string, quote?: boolean): string {
   if (!value) return null
@@ -94,6 +123,7 @@ export interface SchemaConfig {
   comment?: string
   defaultValue?: string
   primaryKey?: boolean
+  extra?: string
 }
 
 // this is the flattened structure we actually render in a component
@@ -108,7 +138,7 @@ export interface Schema {
 }
 
 export interface SchemaItemChange {
-  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment'
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment' | 'extra'
   columnName: string
   newValue: string | boolean | null
 }
@@ -121,6 +151,61 @@ export interface AlterTableSpec {
   drops?: string[]
 }
 
+export interface IndexColumn {
+  name: string
+  order: 'ASC' | 'DESC'
+}
+
+export interface CreateIndexSpec {
+  name?: string
+  columns: IndexColumn[]
+  unique: boolean
+}
+
+export interface DropIndexSpec {
+  name: string
+}
+
+export interface IndexAlterations {
+  additions: CreateIndexSpec[]
+  drops: DropIndexSpec[]
+  table: string
+  schema?: string
+}
+
+
+
+export interface CreateRelationSpec {
+  toTable: string;
+  toSchema?: string;
+  toColumn: string;
+  fromColumn: string;
+  constraintName?: string;
+  onUpdate?: string;
+  onDelete?: string;
+}
+
+
 export type DialectConfig = {
   [K in Dialect]: SchemaConfig
+}
+
+
+export interface TableKey {
+  toTable: string;
+  toSchema: string;
+  toColumn: string;
+  fromTable: string;
+  fromSchema: string;
+  fromColumn: string;
+  constraintName?: string;
+  onUpdate?: string;
+  onDelete?: string;
+}
+
+export interface RelationAlterations {
+  additions: CreateRelationSpec[],
+  drops: string[]
+  table: string
+  schema?: string
 }

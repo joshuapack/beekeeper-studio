@@ -132,19 +132,21 @@
             <span>Apply</span>
           </x-button>
         </template>
+        <template v-if="!editable">
+          <span class="statusbar-item" title="Only tables with a single primary key column are editable."><i class="material-icons-outlined">info</i> Read Only</span>
+        </template>
 
         <!-- Actions -->
+        <x-button class="btn btn-flat" title="Refresh table" @click="refreshTable">
+          <i class="material-icons">refresh</i>
+        </x-button>
+        <x-button class="btn btn-flat" title="Add row" @click.prevent="cellAddRow">
+          <i class="material-icons">add</i>
+        </x-button>
         <x-button class="actions-btn btn btn-flat" title="actions">
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <x-menuitem @click.prevent="cellAddRow">
-              <x-label>Add Row</x-label>
-            </x-menuitem>
-            <x-menuitem @click="refreshTable">
-              <x-label>Refresh</x-label>
-            </x-menuitem>
-            <hr>
             <x-menuitem @click="exportTable">
               <x-label>Export Whole Table</x-label>
             </x-menuitem>
@@ -758,9 +760,6 @@ export default Vue.extend({
       this.tabulator.addRow({}, true).then(row => { 
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
-        this.$nextTick(() => {
-          row.getCells()[0].edit();
-        })
       })
     },
     addRowToPendingInserts(row) {

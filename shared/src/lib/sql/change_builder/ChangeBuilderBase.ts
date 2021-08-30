@@ -1,5 +1,5 @@
 import { getDialectData } from "@shared/lib/dialects";
-import { AlterTableSpec, Dialect, DialectData, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
+import { AlterTableSpec, CreateIndexSpec, CreateRelationSpec, Dialect, DialectData, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from "lodash";
 
 export abstract class ChangeBuilderBase {
@@ -19,7 +19,15 @@ export abstract class ChangeBuilderBase {
   }
 
   get tableName(): string{
-    return this.schema ? `${this.wrapIdentifier(this.schema)}.${this.wrapIdentifier(this.table)}` : this.wrapIdentifier(this.table)
+    return this.buildTableName(this.table, this.schema);
+  }
+
+  buildTableName(table: string, schema?: string) {
+    return schema ? `${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}` : this.wrapIdentifier(table)
+  }
+
+  join(...parts: string[]) {
+    return `${parts.map((p) => this.wrapIdentifier(p)).join(".")}`
   }
 
   // column alteration
@@ -36,7 +44,7 @@ export abstract class ChangeBuilderBase {
 
   }
 
-  alterNullable(column, nullable: boolean) {
+  alterNullable(column: string, nullable: boolean) {
     const direction = nullable ? 'DROP' : 'SET'
     return `ALTER COLUMN ${this.wrapIdentifier(column)} ${direction} NOT NULL`
   }
@@ -45,7 +53,7 @@ export abstract class ChangeBuilderBase {
     return `RENAME COLUMN ${this.wrapIdentifier(column)} TO ${this.wrapIdentifier(newName)}`
   }
 
-  setComment(tableName, column: string, newComment: string) {
+  setComment(tableName: string, column: string, newComment: string) {
     return `COMMENT ON COLUMN ${tableName}.${this.wrapIdentifier(column)} IS '${this.escapeString(newComment)}'`
   }
 
@@ -65,7 +73,9 @@ export abstract class ChangeBuilderBase {
       this.wrapIdentifier(item.columnName),
       this.wrapLiteral(item.dataType),
       item.nullable ? 'NULL' : 'NOT NULL',
-      item.defaultValue ? `DEFAULT ${this.wrapLiteral(item.defaultValue)}` : null
+      item.defaultValue ? `DEFAULT ${this.wrapLiteral(item.defaultValue)}` : null,
+      item.extra,
+      item.comment ? `COMMENT ${this.escapeString(item.comment, true)}` : null
     ].filter((i) => !!i).join(" ")
   }
   addColumns(items: SchemaItem[]): string[] {
@@ -164,6 +174,9 @@ export abstract class ChangeBuilderBase {
       }).join(';')
     }
 
+    // for most databases (excluding mysql)
+    // renames and comments happen outside the core ALTER COLUMN statement.
+    // eg psql SET COMMENT ON COLUMN, sql server is a stored procedure.
     const results = [
       initial,
       alterTable,
@@ -176,5 +189,69 @@ export abstract class ChangeBuilderBase {
     } else {
       return null
     }
+  }
+
+
+  singleIndex(spec: CreateIndexSpec): string {
+    const unique = spec.unique ? 'UNIQUE' : ''
+    const name = spec.name ? this.dialectData.wrapIdentifier(spec.name) : ''
+    const table = this.tableName
+    if (!spec.columns?.length) {
+      throw new Error("Indexes require at least one column")
+    }
+    const columns = spec.columns?.map((c) => {
+      return `${this.dialectData.wrapIdentifier(c.name)} ${c.order}`
+    })
+    return `
+      CREATE ${unique} INDEX ${name} on ${table}(${columns})
+    `
+  }
+
+  createIndexes(specs: CreateIndexSpec[]): string | null {
+    if (!specs?.length) return null
+    return specs.map((spec) => this.singleIndex(spec)).join(";");
+  }
+
+  dropIndexes(drops: DropIndexSpec[]): string | null {
+    if (!drops?.length) return null
+
+    const names = drops.map((spec) => this.dialectData.wrapIdentifier(spec.name)).join(",")
+    return names.length ? `DROP INDEX ${names}` : null
+  }
+
+  singleRelation(spec: CreateRelationSpec): string {
+
+    const fromTable = this.tableName
+    const fkName = spec.constraintName ? this.wrapIdentifier(spec.constraintName) : ''
+    const toTable = this.buildTableName(spec.toTable, spec.toSchema)
+    const fromColumn = this.wrapIdentifier(spec.fromColumn)
+    const toColumn = this.wrapIdentifier(spec.toColumn)
+    const onUpdate = spec.onUpdate ? `ON UPDATE ${this.wrapLiteral(spec.onUpdate)}` : ''
+    const onDelete = spec.onDelete ? `ON DELETE ${this.wrapLiteral(spec.onDelete)}` : ''
+
+    const result = `
+      ALTER TABLE ${fromTable}
+      ADD CONSTRAINT ${fkName}
+      FOREIGN KEY (${fromColumn})
+      REFERENCES ${toTable} (${toColumn})
+      ${onUpdate}
+      ${onDelete}
+    `
+    return result
+  }
+
+  createRelations(specs: CreateRelationSpec[]): string | null {
+    if (!specs?.length) return null
+    return specs.map((spec) => this.singleRelation(spec)).join(";")
+  }
+
+  dropRelations(names: string[]): string | null {
+    if (!names?.length) return null
+
+    return names.map((name: string) => {
+      const t = this.tableName
+      const c = this.wrapIdentifier(name)
+      return `ALTER TABLE ${t} DROP CONSTRAINT ${c}`
+    }).join(";")
   }
 }

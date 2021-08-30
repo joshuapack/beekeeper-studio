@@ -16,13 +16,22 @@ const defaultLength = (t: string) => {
 
 export const RedshiftData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
+  constraintActions: [],
   wrapIdentifier: (id: string) => `"${id.replaceAll(/"/g, '""')}"`,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   disabledFeatures: {
     alter: {
       multiStatement: true
-    }
+    },
+    informationSchema: {
+      extra: true
+    },
+    constraints: {
+      onUpdate: true,
+      onDelete: true
+    },
+    createIndex: true,
   }
 
 }

@@ -83,6 +83,9 @@ export default Vue.extend({
         showListOnEmpty: true
       }
     },
+    disabledFeatures() {
+      return getDialectData(this.dialect).disabledFeatures
+    },
     tableColumns() {
       const trashButton = () => '<i class="material-icons" title="remove">clear</i>'
       const editable = this.editable
@@ -123,6 +126,20 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           widthShrink:1
         },
+        // TODO (Fix this)
+        // right now we don't support mysql's EXTRA field. But creating an auto_increment
+        // column is still possible. using the autoincrement column type.
+        // (
+        //   this.disabledFeatures?.informationSchema?.extra ? null : {
+        //     title: "Extra",
+        //     field: 'extra',
+        //     editor: vueEditor(NullableInputEditor),
+        //     tooltip: true,
+        //     headerTooltip: "EG AUTO_INCREMENT",
+        //     formatter: this.cellFormatter,
+        //     widthShrink: 1,
+        //   }
+        // ),
         {
           title: 'Comment',
           field: 'comment',
@@ -143,7 +160,7 @@ export default Vue.extend({
           widthShrink:1,
           cssClass: "no-padding no-edit-highlight"
         },
-      ]
+      ].filter((c) => !!c)
       return editable ? [
         {rowHandle:true, formatter:"handle", width:30, frozen: true, minWidth:30, resizable: false, cssClass: "no-edit-highlight"},
         ...dataColumns,
@@ -282,9 +299,13 @@ export default Vue.extend({
           line-height: $row-height;
           box-shadow: inset 0 1px $theme-base;
           pre, input:not([type="checkbox"]) {
+            font-family: 'Roboto';
             min-height: $row-height;
             line-height: $row-height;
-            padding: $cell-padding!important;
+            padding: 0 $cell-padding!important;
+            &:focus {
+              padding-bottom: 1px !important;
+            }
           }
         }
         &.no-padding {
@@ -433,10 +454,6 @@ export default Vue.extend({
         }
         &.tabulator-editing {
           box-shadow: none!important;
-          input:not([type="checkbox"]) {
-            background: rgba($theme-base, 0.1)!important;
-            box-shadow: inset 0 -1px $theme-base!important;
-          }
           input[type="checkbox"] {
             box-shadow: inset 0 0 0 2px $theme-base;
             &:active, 

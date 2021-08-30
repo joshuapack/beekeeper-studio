@@ -1,5 +1,9 @@
 <template>
-  <div class="list-item" :title="title">
+  <div 
+    class="list-item"
+    :title="title"
+    @contextmenu.stop.prevent="showContextMenu"
+  >
     <a
       href=""
       class="list-item-btn"
@@ -9,24 +13,20 @@
     >
       <span :class="`connection-label connection-label-color-${labelColor}`"></span>
       <div class="connection-title flex-col expand">
-        <span class="title">{{label}}</span>
-        <span class="subtitle">{{subtitle}}</span>
+        <div class="title">{{label}}</div>
+        <div class="subtitle"> 
+          <span class="bastion" v-if="this.config.sshBastionHost">
+            <span class="truncate">{{ this.config.bastionHostString }}</span>&nbsp;>&nbsp;
+          </span>
+          <span class="ssh" v-if="this.config.sshHost">
+            <span class="truncate">{{ this.config.sshHostString }}</span>&nbsp;>&nbsp;
+          </span>
+          <span class="connection">
+            <span>{{ subtitleSimple }}</span>
+          </span>
+        </div>
       </div>
       <span class="badge"><span>{{config.connectionType}}</span></span>
-      <x-contextmenu>
-        <x-menu>
-          <x-menuitem v-if="showDuplicate" @click.prevent="duplicate" title="Duplicate the connection with all settings">
-            <x-label class="text-">Duplicate</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="remove" title="Removes the connection">
-            <x-label class="text-danger">Remove</x-label>
-          </x-menuitem>
-          <hr>
-          <x-menuitem @click.prevent="copyUrl" v-bind:title="`Copy the ${this.connectionType} of the connection to the clipboard`">
-            <x-label class="text-">Copy {{this.connectionType}}</x-label>
-          </x-menuitem>
-        </x-menu>
-      </x-contextmenu>
     </a>
   </div>
 </template>
@@ -66,7 +66,7 @@ export default {
 
       return 'Url'
     },
-    subtitle() {
+    subtitleSimple() {
       if (this.isRecentList) {
         return this.timeAgo.format(this.config.updatedAt)
       } else {
@@ -90,6 +90,27 @@ export default {
 
   },
   methods: {
+    showContextMenu(event) {
+      this.$bks.openMenu({
+        event,
+        item: this.config,
+        options: [
+          {
+            name: "Duplicate",
+            slug: 'duplicate',
+            handler: this.duplicate
+          },
+          {
+            name: `Copy ${this.connectionType}`,
+            handler: this.copyUrl
+          },
+          {
+            name: "Remove",
+            handler: this.remove
+          },
+        ]
+      })
+    },
     click() {
       if (this.savedConnection) {
         this.$emit('edit', this.savedConnection)
