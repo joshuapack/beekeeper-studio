@@ -1,6 +1,6 @@
 <template>
   <div class="query-editor" v-hotkey="keymap">
-    <div 
+    <div
       class="top-panel"
       ref="topPanel"
       @contextmenu.prevent.stop="showContextMenu"
@@ -35,7 +35,7 @@
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
-      <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
+      <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results. {{result.affectedRows || 0}} rows affected.</span></div></div>
       <div class="message" v-else-if="error">
         <error-alert :error="error" />
       </div>
@@ -183,7 +183,7 @@
         return null
       },
       currentlySelectedQuery() {
-        if (this.currentlySelectedQueryIndex == null) return null
+        if (this.currentlySelectedQueryIndex === null) return null
         return this.individualQueries[this.currentlySelectedQueryIndex]
       },
       currentQueryPosition() {
@@ -236,8 +236,8 @@
           // add quoted option for everyone that needs to be quoted
           if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name)))
             result[`"${table.name}"`] = cleanColumns
-          
-          // don't add table names that can get in conflict with database schema 
+
+          // don't add table names that can get in conflict with database schema
           if (!/\./.test(table.name))
             result[table.name] = cleanColumns
         })
@@ -371,7 +371,7 @@
         this.$refs.titleInput.select()
       },
       selectFirstParameter() {
-        if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
+        if (!this.$refs['paramInput'] || this.$refs['paramInput'].length === 0) return
         this.$refs['paramInput'][0].select()
       },
       updateEditorHeight() {
@@ -557,7 +557,7 @@
           "Shift-Cmd-F": this.formatSql,
           "Ctrl-/": this.toggleComment,
           "Cmd-/": this.toggleComment,
-          "Esc": this.cancelQuery
+          "Esc": this.cancelQuery,
         }
 
         const modes = {
@@ -599,7 +599,7 @@
                 .map(n => /^\d/.test(n) ? `"${n}"` : n)
                 .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
                 .join('.')
-  
+
               co.update(from, to, [names], origin)
             }
           })
