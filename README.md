@@ -16,7 +16,12 @@ sh ./apps/studio/build/arm-build.sh
 yarn install && yarn run electron:serve
 ```
 
-Due to not signing it, you will need to build on your mac yourself. I have made it so much easier this time around.
+I have released the binary now, you can install and try signing it yourself. Download and unzip on downloads folder. Then run these commands in terminal:
+
+`sudo xattr -rd com.apple.quarantine ~/Downloads/Beekeeper\ Studio.app`
+You may need to self sign it as well: `codesign --force --deep --sign - ~/Downloads/Beekeeper\ Studio.app`
+
+Where `~/Downloads/Beekeeper\ Studio.app` is the location of the unzipped application.
 
 This could be the last build, since, they will be upgrading to Electron 12 which supports ARM64 on Mac with M1!
 
