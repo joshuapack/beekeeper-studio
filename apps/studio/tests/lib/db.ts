@@ -82,8 +82,8 @@ export class DBTestUtil {
   }
 
   async setupdb() {
-    await this.createTables()
     await this.connection.connect()
+    await this.createTables()
     const address = await this.knex("addresses").insert({country: "US"}).returning("id")
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
     const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
@@ -97,7 +97,6 @@ export class DBTestUtil {
 
   async listTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
-    console.log(tables)
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
@@ -295,7 +294,6 @@ export class DBTestUtil {
     expect(pk).toBe("id")
 
     if (!this.options.skipPkQuote) {
-      console.log("quoted table PK")
       pk = await this.connection.getPrimaryKey("tablewith'char", this.defaultSchema)
       expect(pk).toBe("one")
     }
@@ -328,7 +326,13 @@ export class DBTestUtil {
 
   // lets start simple, it should resolve for all connection types
   async tablePropertiesTests() {
-    await this.connection.getTableProperties('group')
+    await this.connection.getTableProperties('group', this.defaultSchema)
+
+    if (!this.data.disabledFeatures.createIndex) {
+      const indexes = await this.connection.listTableIndexes('has_index', this.defaultSchema)
+      const names = indexes.map((i) => i.name)
+      expect(names).toContain('has_index_foo_idx')
+    }
   }
 
   async streamTests() {
@@ -416,6 +420,13 @@ export class DBTestUtil {
       table.timestamps()
       table.string("job_name").notNullable()
       table.decimal("hourly_rate")
+    })
+
+    await this.knex.schema.createTable('has_index', (table) => {
+      table.integer('foo')
+      if (!this.data.disabledFeatures.createIndex) {
+        table.index('foo', 'has_index_foo_idx')
+      }
     })
 
     await this.knex.schema.createTable("people_jobs", (table) => {

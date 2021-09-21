@@ -2,21 +2,21 @@ version: '3'
 volumes:
   mssql:
   mssqllatin:
-  psql:
   mysql:
   mysql8:
+  psql96:
   mariadb:
   cockroachdb:
 
 services:
   psql:
-    image: postgres
+    image: postgres:9.6
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: saklia
     volumes:
-      - psql:/var/lib/postgresql/data
+      - psql96:/var/lib/postgresql/data
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
