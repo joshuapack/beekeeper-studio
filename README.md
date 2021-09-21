@@ -1,8 +1,10 @@
-# Forked for M1 ARM64 of recent tag v2.1.1
+# Forked for M1 ARM64 of recent tag v2.1.3
 You can build your self.
 
 ```bash
 # First: Install NodeJS 12+, NPM, and Yarn
+# You may need to install as rosetta using something like `npm install --target_arch=x64`
+# I haven't tested that as locally I am able to build without issues.
 
 # Clone and build!
 git clone git@github.com:joshuapack/beekeeper-studio.git beekeeper-studio
