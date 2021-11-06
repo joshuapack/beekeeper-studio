@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "private": true,
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
@@ -116,7 +116,7 @@
     "@vue/test-utils": "^1.0.3",
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
-    "electron": "12.0.4",
+    "electron": "12.1.0",
     "electron-builder-notarize": "beekeeper-studio/electron-builder-notarize#master",
     "electron-devtools-installer": "^3.1.1",
     "electron-download": "^4.1.1",
