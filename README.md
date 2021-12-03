@@ -1,4 +1,4 @@
-# Forked for M1 ARM64 of recent tag v2.1.4
+# Forked for M1 ARM64 of recent tag v2.1.5
 You can build your self.
 
 ```bash
@@ -25,9 +25,8 @@ You may need to self sign it as well: `codesign --force --deep --sign - ~/Downlo
 
 Where `~/Downloads/Beekeeper\ Studio.app` is the location of the unzipped application.
 
-This could be the last build, since, they will be upgrading to Electron 12 which supports ARM64 on Mac with M1!
-
-Thank you all for the good time :D
+The code is not that far off from the original code, however, it looks like they do not have a machine to build for M1.
+If you are having any issues, feel free to ask me!
 
 # Beekeeper Studio
 
