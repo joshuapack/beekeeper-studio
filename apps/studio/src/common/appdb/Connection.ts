@@ -6,6 +6,8 @@ import { FavoriteQuery } from './models/favorite_query'
 import { UserSetting } from './models/user_setting'
 import { LoggerOptions } from 'typeorm/logger/LoggerOptions'
 import { PinnedEntity } from "./models/PinnedEntity"
+import { CloudCredential } from "./models/CloudCredential"
+import { OpenTab } from "./models/OpenTab"
 
 const models = [
   SavedConnection,
@@ -13,7 +15,9 @@ const models = [
   UsedQuery,
   FavoriteQuery,
   UserSetting,
-  PinnedEntity
+  PinnedEntity,
+  CloudCredential,
+  OpenTab
 ]
 
 

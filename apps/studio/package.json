@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "2.1.5",
+  "version": "3.0.1",
   "private": true,
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
@@ -24,15 +24,18 @@
   },
   "main": "./dist_electron/bundled/background.js",
   "dependencies": {
+    "axios": "^0.21.4",
+    "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
     "better-sqlite3": "^7.4.1",
     "bytes": "^3.1.0",
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.1.11",
-    "codemirror": "^5.58.2",
+    "codemirror": "^5.63.1",
     "connection-string": "^3.4.2",
     "core-js": "3",
     "dateformat": "^3.0.3",
+    "diff-match-patch": "^1.0.5",
     "dompurify": "^2.2.8",
     "electron-log": "^4.2.2",
     "electron-util": "^0.14.1",
@@ -65,7 +68,7 @@
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "^4.0.0",
-    "sql-query-identifier": "^2.1.0",
+    "sql-query-identifier": "^2.2.0",
     "ssh2": "beekeeper-studio/ssh2#electron-detection",
     "tabulator-tables": "rathboma/tabulator#max-initial-width-with-dist",
     "typeface-roboto": "^0.0.75",
@@ -85,8 +88,7 @@
     "vuex-persist": "^2.0.1",
     "xel": "beekeeper-studio/xel",
     "xlsx": "^0.17.0",
-    "yargs-parser": "^20.2.7",
-    "yup": "^0.27.0"
+    "yargs-parser": "^20.2.7"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^5.4.1",

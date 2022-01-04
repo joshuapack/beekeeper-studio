@@ -21,7 +21,7 @@
             <i class="material-icons" @click.prevent="closeModal">clear</i>
           </span>
           <div v-if="error" class="alert alert-danger">
-            <i class="material-icons">warning</i>
+            <i class="material-icons">error_outline</i>
             <div>Error: {{ error.message }}</div>
           </div>
           <div class="modal-form export-form">
@@ -248,14 +248,17 @@ export default {
       if (!this.filePath) {
         return;
       }
-      this.$emit('export', { 
+      const component = this;
+
+      const payload = { 
         table: this.table,
         filters: this.filters,
         filePath: this.filePath,
         options: this.options,
         outputOptions: this.outputOptions,
         exporter: this.selectedExportFormat.key
-      })
+      }
+      this.$emit('export', payload)
       this.$modal.hide('export-modal')
     },
     closeModal () {

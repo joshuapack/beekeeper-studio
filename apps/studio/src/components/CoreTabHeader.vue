@@ -4,10 +4,10 @@
       <a
         class="nav-link"
         @mousedown="mousedown"
-        @click.middle.prevent="$emit('close', tab)"
+        @click.middle.prevent="maybeClose"
         :class="{ active: selected }"
       >
-        <table-icon v-if="tab.type === 'table'" :table="tab.table" />
+        <table-icon v-if="tab.type === 'table'" :table="tab" />
         <i v-else-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
         <i v-else-if="tab.type === 'table-properties'" class="material-icons-outlined item-icon table-properties" :class="iconClass">construction</i>
         <i v-else-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
@@ -15,9 +15,9 @@
         <i v-else class="material-icons item-icon">new_releases</i>
         <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
         <div class="tab-action">
-          <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @mousedown.stop="doNothing" @click.prevent.stop="maybeClose">
-            <i class="material-icons close">close</i>
-            <i class="material-icons unsaved-icon" >fiber_manual_record</i>
+          <span class="tab-close" @mouseenter="hover=true" @mouseleave="hover=false" @mousedown.stop="doNothing" @click.prevent.stop="maybeClose">
+            <i class="material-icons close" v-if="hover || !closeIcon">close</i>
+            <i class="material-icons unsaved" v-else>{{closeIcon}}</i>
           </span>
         </div>
       </a>
@@ -33,6 +33,7 @@
     data() {
       return {
         unsaved: false,
+        hover: false,
       }
     },
     methods: {
@@ -59,6 +60,11 @@
     watch: {
     },
     computed: {
+      closeIcon() {
+        if (this.tab.alert) return 'error_outline'
+        if (this.tab.unsavedChanges) return 'fiber_manual_record'
+        return null
+      },
       keymap() {
         const result = {}
         if (this.selected) {
@@ -77,7 +83,7 @@
       },
       iconClass() {
         const result = {}
-        result[`${this.tab.table.entityType}-icon`] = true
+        result[`${this.tab.entityType}-icon`] = true
         return result
       },
       scope() {

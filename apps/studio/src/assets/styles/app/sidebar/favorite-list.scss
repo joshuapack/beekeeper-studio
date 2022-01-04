@@ -3,16 +3,23 @@
   // height: 100%;
   // display: flex;
   // flex-direction: column;
+  &:hover {
+    .list-heading {
+      .actions {
+        display: flex;
+      }
+    }
+  }
   .sidebar-list {
     position: relative;
     flex: 1 1 auto;
     height: 0;
     max-height: -webkit-fill-available;
     overflow-x: hidden;
-    padding: $gutter-h 0;
+    padding: 0 0 $gutter-h 0;
   }
   .list-group {
-    padding: $gutter-h 0;
+    padding: 0 0 $gutter-h 0;
     min-height: 105px;
   }
   .list-item {
@@ -37,6 +44,11 @@
       visibility: hidden;
     }
   }
+  .list-heading {
+    .actions {
+      display: none;
+    }
+  }
   .list-title {
     flex-grow: 1;
     overflow: hidden;
@@ -45,6 +57,9 @@
       font-size: 80%;
       color: $text-lighter;
       @extend .truncate;
+      span {
+        @extend .truncate;
+      }
     }
   }
   .list-item-btn {
