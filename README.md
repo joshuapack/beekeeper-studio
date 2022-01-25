@@ -1,4 +1,4 @@
-# Forked for M1 ARM64 of recent tag v3.0.11
+# Forked for M1 ARM64 of recent tag v3.1.0
 You can build your self.
 
 ```bash
