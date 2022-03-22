@@ -22,7 +22,7 @@
                 </select>
               </div>
               <div v-if="config.connectionType">
-                
+
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <postgres-form v-if="config.connectionType === 'cockroachdb'" :config="config" :testing="testing"></postgres-form>
                 <mysql-form v-if="['mysql', 'mariadb'].includes(config.connectionType)" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
@@ -45,12 +45,12 @@
             </form>
 
           </div>
-          <div class="pitch"><span class="badge">NEW</span> Share data across devices (or with your team) using <a href="https://www.beekeeperstudio.io/blog/release-3.0">workspaces</a>.</div>
+          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get" class="">Beekeeper Studio Ultimate Edition</a></div>
           <div v-if="connectionError" class="alert alert-danger">
             {{connectionError}}
           </div>
         </div>
-        
+
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
       </div>
     </div>

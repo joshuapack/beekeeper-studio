@@ -22,6 +22,17 @@
         </div>
       </a>
     </li>
+    <modal :name="modalName" class="beekeeper-modal vue-dialog sure" @opened="$refs.no.focus()">
+      <div class="dialog-content">
+        <div class="dialog-c-title">Are you sure?</div>
+        <p>You will lose unsaved changes to '{{this.tab.title}}'</p>
+      </div>
+      <div class="vue-dialog-buttons">
+        <span class="expand"></span>
+        <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
+        <button @click.prevent="closeForReal" class="btn btn-sm btn-primary">Close Tab</button>
+      </div>
+    </modal>
   </div>
 </template>
 <script>
@@ -37,13 +48,17 @@
       }
     },
     methods: {
+      closeForReal() {
+        this.$modal.hide(this.modalName)
+        this.$nextTick(() => {
+          this.$emit('close', this.tab)
+        })
+      },
       async maybeClose(event) {
         event.stopPropagation()
         event.preventDefault()
         if (this.tab.unsavedChanges) {
-          if (window.confirm("Are you sure? You will lose unsaved changes.")) {
-            this.$emit('close', this.tab)
-          }
+          this.$modal.show(this.modalName)
         } else {
           this.$emit('close', this.tab)
         }
@@ -60,6 +75,9 @@
     watch: {
     },
     computed: {
+      modalName() {
+        return `sure-${this.tab.id}`
+      },
       closeIcon() {
         if (this.tab.alert) return 'error_outline'
         if (this.tab.unsavedChanges) return 'fiber_manual_record'
