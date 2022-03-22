@@ -1,4 +1,10 @@
-# Forked for M1 ARM64 of recent tag v3.1.0
+# Beekeeper Studio Official Notes
+
+Support for M1 Macs are officially being supported by beekeeper studio starting in version 4.0
+
+https://github.com/beekeeper-studio/beekeeper-studio/issues/599#issuecomment-1061216867
+
+# Forked for M1 ARM64 of recent tag v3.2.1
 You can build your self.
 
 ```bash
